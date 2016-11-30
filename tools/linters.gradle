@@ -1,0 +1,29 @@
+apply plugin: 'checkstyle'
+apply plugin: 'pmd'
+
+task checkstyle(type: Checkstyle) {
+    configFile file("$rootDir/tools/linters/checkstyle.xml")
+    source 'src'
+    include '**/*.java'
+    exclude '**/gen/**'
+
+    classpath = files()
+}
+
+task pmd(type: Pmd) {
+    ruleSetFiles = files("$rootDir/tools/linters/pmd-ruleset.xml")
+    ruleSets = []
+
+    source 'src'
+    include '**/*.java'
+    exclude '**/gen/**'
+
+    reports {
+        xml.enabled = false
+        html.enabled = true
+        xml { destination "$buildDir/reports/pmd/pmd.xml" }
+        html { destination "$buildDir/reports/pmd/pmd.html" }
+    }
+}
+
+check.dependsOn 'checkstyle', 'pmd'

@@ -1,0 +1,89 @@
+/*
+This plugin assumes you have a folder 'tools' in the root dir of your project.
+
+To use this you need to first apply it in your project like:
+
+apply from: "$rootDir/tools/test-butler.gradle // or the location of this file
+
+And then have a property in the extra properties of your root build.gradle with the
+TestButler version like:
+
+ext {
+
+  testButler = '1.2.0'
+}
+ */
+
+final butlerPackage = 'com.linkedin.android.testbutler'
+final butlerApkDir = "$rootDir/tools/test-butler"
+final butlerApkPath = "$butlerApkDir/test-butler-app-${rootProject.ext.testButler}.apk"
+final butlerApkURL = "https://bintray.com/linkedin/maven/download_file?file_path=com%2Flinkedin%2Ftestbutler%2Ftest-butler-app%2F${rootProject.ext.testButler}%2Ftest-butler-app-${rootProject.ext.testButler}.apk"
+
+/**
+ * Downloads Test Butler APK if needed
+ */
+task downloadButlerApk {
+
+    group "test-butler"
+    description "Verifies and downloads the Test Butler APK"
+
+    doLast {
+        logger.info("Verifying if test-butler apk is present")
+
+        def butlerDir = new File(butlerApkDir)
+
+        if (!butlerDir.exists())
+            butlerDir.mkdirs()
+
+        def f = new File(butlerApkPath)
+
+        if (f.exists()) {
+            logger.info("Test butler $butlerApkPath is already downloaded.")
+            return
+        }
+
+        logger.info("Cleaning versions different than $rootProject.ext.testButler")
+        butlerDir.listFiles().each { it.delete() }
+
+        logger.info("Downloading Test-butler apk from: $butlerApkURL")
+        new URL(butlerApkURL).withInputStream { i -> f.withOutputStream { it << i } }
+    }
+}
+
+/**
+ * This task installs the test-butler apk in all emulators if needed
+ */
+task('installButlerApk', dependsOn: [downloadButlerApk]) {
+
+    group "test-butler"
+    description "Install the Test Butler APK in all emulators if needed"
+
+    doLast {
+        logger.info("Verifying test-butler installation in emulators")
+
+        final adb = "$android.sdkDirectory.absolutePath/platform-tools/adb"
+
+        final String[] split = "$adb devices -l".execute().text.split("\\r?\\n")
+
+        split.each {
+
+            if (it.isEmpty() || !it.startsWith('emulator-'))
+                return;
+
+            logger.info("Emulator: $it")
+
+            final emu = it.split("\\s")[0]
+
+            if ("$adb -s $emu shell pm list packages".execute().text.contains(butlerPackage))
+                return;
+
+            final installResult = "$adb -s $emu install $butlerApkPath".execute().text
+
+            if (!installResult.contains("Success"))
+                logger.log(LogLevel.ERROR, "Could not install APK. Install output:\n$installResult")
+
+            else
+                logger.info("Installed $butlerApkPath in $emu successfully")
+        }
+    }
+}

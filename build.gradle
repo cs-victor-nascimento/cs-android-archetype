@@ -1,0 +1,49 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.3.0-beta4'
+        classpath 'com.getkeepsafe.dexcount:dexcount-gradle-plugin:0.6.2'
+        classpath 'me.tatarka:gradle-retrolambda:3.5.0'
+        classpath 'me.tatarka.retrolambda.projectlombok:lombok.ast:0.2.3.a2'
+    }
+
+    // For avoiding excessive android lint logging with retrolambda
+    // see https://github.com/evant/android-retrolambda-lombok
+    configurations.classpath.exclude group: 'com.android.tools.external.lombok'
+}
+
+ext {
+    // Default project`s properties
+    compileSdkVersion = 25
+    buildToolsVersion = '25.0.2'
+    minSdkVersion = 16
+    targetSdkVersion = 25
+    versionCode = 1
+    versionName = '1.0.0'
+
+    // default dependencies versions
+    support = '25.1.1'
+    okHttp = '3.6.0'
+
+    // test dependencies
+    junit = '4.12'
+    jsonPath = '2.2.0'
+    hamcrest = '1.3'
+    testButler = '1.2.0'
+    requestMatcher = '2.1.0'
+    robolectric = '3.2.2'
+    espresso = '2.2.2'
+    supportRunner = '0.5'
+}
+
+allprojects {
+    repositories {
+        jcenter()
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}

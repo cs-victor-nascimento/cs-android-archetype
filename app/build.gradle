@@ -1,0 +1,96 @@
+apply plugin: 'com.android.application'
+apply plugin: 'me.tatarka.retrolambda'
+apply plugin: 'com.getkeepsafe.dexcount'
+apply from: "$rootDir/tools/tools.gradle"
+
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        applicationId "br.com.concretesolutions.androidarchetype"
+
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode rootProject.ext.versionCode
+        versionName rootProject.ext.versionName
+
+        testInstrumentationRunner "br.com.concretesolutions.androidarchetype.CustomJUnitRunner"
+
+        proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+    }
+
+    signingConfigs {
+
+        debug {
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+            storeFile file("$rootDir/distribution/debug.keystore")
+            storePassword 'android'
+        }
+
+        if (System.getenv("KEY_ALIAS") == null) {
+            release {}
+        } else {
+            release {
+                keyAlias System.getenv("KEY_ALIAS")
+                keyPassword System.getenv("KEY_PASSWORD")
+                storeFile file(System.getenv("KEYSTORE"))
+                storePassword System.getenv("KEYSTORE_PASSWORD")
+            }
+        }
+    }
+
+    buildTypes {
+
+        debug {
+            minifyEnabled true
+            useProguard false
+            testCoverageEnabled true
+            signingConfig signingConfigs.debug
+        }
+
+        qa {
+            minifyEnabled false
+            useProguard true
+            signingConfig signingConfigs.debug
+        }
+
+        release {
+            minifyEnabled false
+            useProguard true
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+final versions = rootProject.ext
+
+dependencies {
+
+    compile "com.android.support:appcompat-v7:$versions.support"
+
+    // Local tests deps
+    testCompile "junit:junit:$versions.junit"
+    testCompile "br.com.concretesolutions:requestmatcher:$versions.requestMatcher"
+    testCompile "com.jayway.jsonpath:json-path-assert:$versions.jsonPath"
+    testCompile "org.hamcrest:hamcrest-all:$versions.hamcrest"
+    testCompile "com.squareup.okhttp3:mockwebserver:$versions.okHttp"
+    testCompile "com.squareup.okhttp3:okhttp:$versions.okHttp"
+    testCompile "org.robolectric:robolectric:$versions.robolectric"
+
+    // Instrumented tests deps
+    androidTestCompile "br.com.concretesolutions:requestmatcher:$versions.requestMatcher"
+    androidTestCompile "com.android.support:support-annotations:$versions.support"
+    androidTestCompile "com.android.support.test.espresso:espresso-core:$versions.espresso"
+    androidTestCompile "com.jayway.jsonpath:json-path-assert:$versions.jsonPath"
+    androidTestCompile "com.linkedin.testbutler:test-butler-library:$versions.testButler"
+    androidTestCompile "com.squareup.okhttp3:mockwebserver:$versions.okHttp"
+    androidTestCompile "com.squareup.okhttp3:okhttp:$versions.okHttp"
+    androidTestCompile "com.android.support.test:runner:$versions.supportRunner"
+}

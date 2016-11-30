@@ -1,0 +1,96 @@
+apply plugin: 'jacoco'
+
+def jacocoRetrolambdaMap = [:]
+
+def excludedClasses = [
+        'android/**/*.*',
+        '**/R.class',
+        '**/R$*.class',
+        '**/BuildConfig.*',
+        '**/*_MembersInjector.*',
+        '**/*_ViewBinding.*',
+        '**/*_ViewBinding$*.*',
+        '**/*_Factory.*',
+        '**/*_Provide*.*',
+        '**/Dagger*.*'
+]
+
+afterEvaluate { project ->
+
+    project.android.buildTypes.each { buildType ->
+
+        task "create${buildType.name.capitalize()}CoverageUnitReport"(type: JacocoReport, dependsOn: "test${buildType.name.capitalize()}UnitTest") {
+            group = 'verification'
+
+            reports {
+                xml.enabled = true
+                html.enabled = true
+                html.destination "$buildDir/reports/jacoco/${buildType.name}UnitTest"
+            }
+
+            jacocoClasspath = configurations['androidJacocoAnt']
+
+            sourceDirectories = files("$projectDir/src/main/java")
+            classDirectories = fileTree(dir: "$buildDir/intermediates/classes/${buildType.name}",
+                    excludes: excludedClasses)
+            executionData = files("$buildDir/jacoco/test${buildType.name.capitalize()}UnitTest.exec")
+
+            // Retrolambda workaround
+            doFirst {
+                new File("$buildDir/intermediates/classes/${buildType.name}").eachFileRecurse { file ->
+                    if (file.name.contains('$$')) {
+                        def renamed = file.path.replace '$$', '$'
+                        jacocoRetrolambdaMap[renamed] = file.path
+                        file.renameTo renamed
+                    }
+                }
+            }
+
+            doLast {
+                jacocoRetrolambdaMap.each { renamed, original ->
+                    new File(renamed).renameTo original
+                }
+                println "jacoco report has been generated to file://${reports.html.destination}/index.html"
+            }
+        }
+
+        task "create${buildType.name.capitalize()}UnifiedCoverageReport"(type: JacocoReport, dependsOn: ["test${buildType.name.capitalize()}UnitTest",
+                                                                                                         "create${buildType.name.capitalize()}CoverageReport"]) {
+            group = 'verification'
+
+            reports {
+                xml.enabled = true
+                html.enabled = true
+                html.destination "$buildDir/reports/jacoco/${buildType.name}Unified"
+            }
+
+            jacocoClasspath = configurations['androidJacocoAnt']
+
+            sourceDirectories = files("$projectDir/src/main/java")
+            classDirectories = fileTree(dir: "$buildDir/intermediates/classes/${buildType.name}",
+                    excludes: excludedClasses)
+            executionData = fileTree(dir: "$buildDir", includes: [
+                    "jacoco/test${buildType.name.capitalize()}UnitTest.exec",
+                    "outputs/code-coverage/connected/*coverage.ec"
+            ])
+
+            // Retrolambda workaround
+            doFirst {
+                new File("$buildDir/intermediates/classes/${buildType.name}").eachFileRecurse { file ->
+                    if (file.name.contains('$$')) {
+                        def renamed = file.path.replace '$$', '$'
+                        jacocoRetrolambdaMap[renamed] = file.path
+                        file.renameTo renamed
+                    }
+                }
+            }
+
+            doLast {
+                jacocoRetrolambdaMap.each { renamed, original ->
+                    new File(renamed).renameTo original
+                }
+                println "jacoco report has been generated to file://${reports.html.destination}/index.html"
+            }
+        }
+    }
+}
