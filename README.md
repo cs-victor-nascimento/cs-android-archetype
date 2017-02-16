@@ -88,7 +88,7 @@ We have opted to configure only the basic test frameworks like Espresso for inst
 
 ## Documentation
 
-This project has a set of documentation to ease implementing a standard amongst teams developing a product. Currently it has best practices and discussions for:
+This project has a set of documentation for the project's team to implement:
 
   - [GIT](/docs/GIT.md)
   - [Source code styleguide](/docs/STYLEGUIDE.md)
